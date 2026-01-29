@@ -1,157 +1,241 @@
-// console.log("Start");
-// setTimeout(
-//     function () {
-//         console.log("Step 1")
-//         setTimeout(
-//             function () {
-//                 console.log("Step 2")
-//                 setTimeout(
-//                     function () {
-//                         console.log("Finish")
-//                     }, 1000
-//                 )
-//             }, 1000
-//         )
-//     }, 1000
-// )
-
-//callback - hell
-
-// let promise = new Promise(
-//     function(resolve, reject){
-//         let num = Math.floor(Math.random()*50)
-//         if(num % 2 == 0) 
-//             resolve(num)
-//         else    reject(num)
-//     }
-// )
-
-// promise.then(
-//     function(data){
-//         console.log("Thành công", data)
-//     }
-// ).catch(
-//     function(data){
-//         console.log("Thất bại", data)
-//     }
-// )
-
-// let promise = new Promise(
-//     function(resolve, reject){
-//         //random ra 1 so tu 0-50 neu le thi resolve, nguoc lai thi reject
-//         let num = Math.floor(Math.random()*50);
-//         if(num % 2 ==0 ) resolve(num);
-//         reject(num);
-//     }
-// )
-// promise.then(
-//     function(data){
-//         console.log("Thanh cong", data)
-//         return new Promise(
-//             function(resolve, reject){
-//                 if(data*2%2){
-//                     resolve(data*2);
-//                 }else{
-//                     reject(data*2);
-//                 }
-//             }
-//         )
-//     }
-// ).then(
-//     function(data){
-//         console.log("Thanh cong", data)
-//     }
-// ).then(
-//     function(data){
-//         console.log("Thanh cong", data)
-//     }
-// ).then(
-//     function(data){
-//         console.log("Thanh cong", data)
-//     }
-// ).then(
-//     function(data){
-//         console.log("Thanh cong", data)
-//     }
-// ).catch(
-//     function(data){
-//         console.log("That bai", data)
-//     }
-// )
-
-//HTTP REQUEST
-
-// function GetData() {
-//     fetch('http://jsonplaceholder.typicode.com/posts/1').then(
-//         function (res) {
-//             return res.json()
-//         }
-//     ).then(function (data) {
-//         console.log(data)
-//     })
-// }
-
+//HTTP REQUEST GETALL GETONE PUT POST DELETE
+const URL_REQUEST = 'http://localhost:3000/posts'
 async function GetData() {
-    let res = await fetch("http://localhost:3000/posts");
-    let data = await res.json();
-    let body_of_table = document.getElementById('table-body');
-    body_of_table.innerHTML = "";
-    for (const i of data) {
-        body_of_table.innerHTML +=
-            `<tr>
-            <td>${i.id}</td>
-            <td>${i.title}</td>
-            <td>${i.views}</td>
-            <td><button onClick = "Delete(${i.id})">Delete</button></td>
-        </tr> `
+    try {
+        let res = await fetch(URL_REQUEST);
+        let posts = await res.json();
+        
+        let body_of_table = document.getElementById('table-body')
+        body_of_table.innerHTML = "";
+        for (const post of posts) {
+            body_of_table.innerHTML +=
+                `<tr>
+                <td>${post.id}</td>
+                <td>${post.title}</td>
+                <td>${post.views}</td>
+                <td><input type='submit' onclick='Delete(${post.id})' value='Delete'/></td>
+            </tr>`
+        }
+    } catch (error) {
+        console.log(error);
     }
 }
+// nếu id không tồn tai -> tạo mới
+//id tồn tại thì sử dụng PATCH (update)
+const URL_COMMENTS = 'http://localhost:3000/comments'
+
 async function Save() {
-    let id = document.getElementById("id_txt").value;
-    let title = document.getElementById("title_txt").value;
-    let views = document.getElementById("views_txt").value;
+    let id = document.getElementById("id_txt").value.trim();
+    let title = document.getElementById("title_txt").value.trim();
+    let views = document.getElementById("views_txt").value.trim();
 
-    // Kiểm tra ID có tồn tại không
-    let checkRes = await fetch(`http://localhost:3000/posts/${id}`);
-    let method = checkRes.ok ? "PUT" : "POST";
-    let url = checkRes.ok ? `http://localhost:3000/posts/${id}` : 'http://localhost:3000/posts';
+    if (!title) {
+        alert('Title is required');
+        return false;
+    }
 
-    let res = await fetch(url,
-        {
-            method: method,
-            headers: {
-                "Content-type": "application/json"
-            },
-            body: JSON.stringify({
-                id: id,
-                title: title,
-                views: views
-            })
+    let res;
+
+    if (id) {
+        // try to update existing post (PATCH)
+        const check = await fetch(URL_REQUEST + '/' + id);
+        if (check.ok) {
+            res = await fetch(URL_REQUEST + '/' + id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, views: views })
+            });
+        } else {
+            // id provided but not exists => create with that id (string)
+            res = await fetch(URL_REQUEST, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: String(id), title: title, views: views, isDeleted: false })
+            });
         }
-    );
-    if (res.ok) {
-        console.log(method === "PUT" ? "Cập nhật thành công" : "Thêm mới thành công");
-        GetData();
     } else {
-        console.log("Lỗi khi lưu");
+        // maxId + 1 (Automaticaly maxId +1 if the text in Id field is empty)
+        const all = await fetch(URL_REQUEST);
+        const posts = await all.json();
+        const maxId = posts.reduce((m, p) => Math.max(m, parseInt(p.id, 10) || 0), 0);
+        const newId = String(maxId + 1);
+        res = await fetch(URL_REQUEST, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: newId, title: title, views: views, isDeleted: false })
+        });
+    }
+
+    if (!res || !res.ok) {
+        console.log('bi loi');
+    }
+
+    clearPostForm();
+    await GetData();
+    await GetComments();
+    return false;
+}
+
+async function SoftDeletePost(id) {
+    const res = await fetch(URL_REQUEST + '/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDeleted: true })
+    });
+    if (res.ok) {
+        console.log('soft deleted');
+        await GetData();
     }
 }
 
-async function Delete(id){
-
-    let res = await fetch(`http://localhost:3000/posts/${id}`,
-        {
-            method: "DELETE",
-            headers: {
-                "Content-type": "application/json"
-            }
-        }
-    );
+async function RestorePost(id) {
+    const res = await fetch(URL_REQUEST + '/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDeleted: false })
+    });
     if (res.ok) {
-        console.log("Xóa thành công");
-    } else {
-        console.log("Lỗi khi xóa");
+        console.log('restored');
+        await GetData();
     }
 }
 
-GetData()
+function clearPostForm() {
+    document.getElementById('id_txt').value = '';
+    document.getElementById('title_txt').value = '';
+    document.getElementById('views_txt').value = '';
+}
+
+// ---------- Comments CRUD ----------
+async function GetComments() {
+    try {
+        const res = await fetch(URL_COMMENTS);
+        const comments = await res.json();
+        const tbody = document.getElementById('comments-table-body');
+        tbody.innerHTML = '';
+        for (const c of comments) {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.text}</td>
+                    <td>${c.postId}</td>
+                    <td>
+                        <button onclick="editComment('${c.id}')">Edit</button>
+                        <button onclick="deleteComment('${c.id}')">Delete</button>
+                    </td>
+                </tr>`;
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function SaveComment() {
+    const id = document.getElementById('comment_id').value.trim();
+    const text = document.getElementById('comment_text').value.trim();
+    const postId = document.getElementById('comment_post_select').value;
+    if (!text || !postId) { alert('Comment text and post are required'); return false; }
+
+    let res;
+    if (id) {
+        // update
+        res = await fetch(URL_COMMENTS + '/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, postId: String(postId) })
+        });
+    } else {
+        // create with auto id + 1
+        const all = await fetch(URL_COMMENTS);
+        const comments = await all.json();
+        const maxId = comments.reduce((m, c) => Math.max(m, parseInt(c.id, 10) || 0), 0);
+        const newId = String(maxId + 1);
+        res = await fetch(URL_COMMENTS, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: newId, text: text, postId: String(postId) })
+        });
+    }
+
+    if (!res || !res.ok) { console.log('comment save error'); }
+    clearCommentForm();
+    await GetComments();
+    return false;
+}
+
+function clearCommentForm() {
+    document.getElementById('comment_id').value = '';
+    document.getElementById('comment_text').value = '';
+    document.getElementById('comment_post_select').selectedIndex = 0;
+}
+
+async function editComment(id) {
+    const res = await fetch(URL_COMMENTS + '/' + id);
+    if (!res.ok) { alert('Comment not found'); return; }
+    const c = await res.json();
+    document.getElementById('comment_id').value = c.id;
+    document.getElementById('comment_text').value = c.text;
+    document.getElementById('comment_post_select').value = c.postId;
+}
+
+async function deleteComment(id) {
+    const res = await fetch(URL_COMMENTS + '/' + id, { method: 'DELETE' });
+    if (res.ok) { await GetComments(); }
+}
+
+// Posts list dropdown
+async function postsDropdown() {
+    const select = document.getElementById('comment_post_select');
+    if (!select) return;
+    const res = await fetch(URL_REQUEST);
+    const posts = await res.json();
+    select.innerHTML = '';
+    for (const p of posts) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.id} - ${p.title}`;
+        select.appendChild(opt);
+    }
+}
+
+// Soft deleted post with red strike-through text and show the "Restorre" button 
+async function GetData() {
+    try {
+        let res = await fetch(URL_REQUEST);
+        let posts = await res.json();
+        let body_of_table = document.getElementById('table-body')
+        body_of_table.innerHTML = "";
+        for (const post of posts) {
+            const rowClass = post.isDeleted ? 'deleted' : '';
+            const actions = post.isDeleted
+                ? `<button onclick="RestorePost('${post.id}')">Restore</button> <button onclick=\"EditPost('${post.id}')\">Edit</button>`
+                : `<button onclick="SoftDeletePost('${post.id}')">Delete</button> <button onclick=\"EditPost('${post.id}')\">Edit</button>`;
+
+            body_of_table.innerHTML +=
+                `<tr class="${rowClass}">
+                    <td>${post.id}</td>
+                    <td>${post.title}</td>
+                    <td>${post.views}</td>
+                    <td>${actions}</td>
+                </tr>`;
+        }
+
+        // update post select for comments
+        await postsDropdown();
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// Loads edited post values into form
+async function EditPost(id) {
+    const res = await fetch(URL_REQUEST + '/' + id);
+    if (!res.ok) { alert('Post not found'); return; }
+    const p = await res.json();
+    document.getElementById('id_txt').value = p.id;
+    document.getElementById('title_txt').value = p.title;
+    document.getElementById('views_txt').value = p.views;
+}
+
+//Load data
+GetData();
+GetComments();

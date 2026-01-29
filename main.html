@@ -21,12 +21,56 @@
             </tbody>
         </table>
     </div>
-    <div>
-        <input type="text" name ="" id="id_txt" placeholder="ID">
-        <input type="text" name ="" id="title_txt" placeholder="Title">
-        <input type="text" name ="" id="views_txt" placeholder="Views">
-        <input type="submit" value = "save" onclick="Save()"> 
+    <div class="post-form">
+        <h3>Manage Post</h3>
+        <label for="id_txt">ID</label>
+        <input type="text" id="id_txt" placeholder="ID (Optional)">
+        <label for="title_txt">Title</label>
+        <input type="text" id="title_txt" placeholder="Title">
+        <label for="views_txt">Views</label>
+        <input type="text" id="views_txt" placeholder="Views">
+        <button id="save-post" onclick="Save()">Save Post</button>
+        <button id="clear-post" onclick="clearPostForm()">Clear</button>
     </div>
+
+    <hr>
+
+    <div class="comments-section">
+        <h3>Comments</h3>
+        <div class="comment-form">
+            <input type="hidden" id="comment_id">
+            <label for="comment_text">Text</label>
+            <input type="text" id="comment_text" placeholder="Comment">
+            <label for="comment_post_select">Post</label>
+            <select id="comment_post_select"></select>
+            <button id="save-comment" onclick="SaveComment()">Save Comment</button>
+            <button onclick="clearCommentForm()">Clear</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>text</th>
+                    <th>postId</th>
+                    <th>actions</th>
+                </tr>
+            </thead>
+            <tbody id="comments-table-body"></tbody>
+        </table>
+    </div>
+
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; padding: 10px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+        th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+        .deleted { opacity: 0.6; }
+        .deleted td { text-decoration: line-through; color: #a00; }
+        .post-form, .comment-form { margin: 10px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+        label { font-size: 0.9rem; }
+        input[type="text"], select { padding:4px; }
+    </style>
+
     <script src="week2.js"></script>
 </body>
 

@@ -4,29 +4,45 @@
     {
       "id": "1",
       "title": "a title",
-      "views": 100
+      "views": 100,
+      "isDeleted": false
     },
     {
       "id": "2",
       "title": "test",
-      "views": "50"
+      "views": "50",
+      "isDeleted": false
     },
     {
       "id": "3",
-      "title": "supertest",
-      "views": "20"
+      "title": "123",
+      "views": "222",
+      "isDeleted": false
+    },
+    {
+      "id": "4",
+      "title": "xin chào",
+      "views": "123",
+      "isDeleted": false
+    },
+    {
+      "id": "6",
+      "title": "123",
+      "views": "ad",
+      "isDeleted": false
+    },
+    {
+      "id": "7",
+      "title": "45",
+      "views": "888",
+      "isDeleted": false
     }
   ],
   "comments": [
     {
-      "id": "1",
-      "text": "a comment about post 1",
-      "postId": "1"
-    },
-    {
-      "id": "2",
-      "text": "another comment about post 1",
-      "postId": "1"
+      "id": "4",
+      "text": "asdasd",
+      "postId": "7"
     }
   ],
   "profile": {
